@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' width='480.00pt' height='270.00pt' viewBox='0 0 480.00 270.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw0ODAuMDB8MC4wMHwyNzAuMDA='>
+    <rect x='0.00' y='0.00' width='480.00' height='270.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw0ODAuMDB8MC4wMHwyNzAuMDA=)'>
+<rect x='0.00' y='-0.000000000000057' width='480.00' height='270.00' style='stroke-width: 0.75; stroke: none; fill: #FFFFFF;' />
+</g>
+<defs>
+  <clipPath id='cpMjYuNjV8NDcxLjM2fDQ3Ljk3fDI0OS4zMg=='>
+    <rect x='26.65' y='47.97' width='444.72' height='201.35' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMjYuNjV8NDcxLjM2fDQ3Ljk3fDI0OS4zMg==)'>
+<rect x='26.65' y='47.97' width='444.72' height='201.35' style='stroke-width: 0.75; stroke: none; fill: #FFFFFF;' />
+<polyline points='26.65,224.37 471.36,224.37 ' style='stroke-width: 0.56; stroke: #D9D9D6; stroke-linecap: butt;' />
+<polyline points='26.65,168.62 471.36,168.62 ' style='stroke-width: 0.56; stroke: #D9D9D6; stroke-linecap: butt;' />
+<polyline points='26.65,112.87 471.36,112.87 ' style='stroke-width: 0.56; stroke: #D9D9D6; stroke-linecap: butt;' />
+<polyline points='26.65,57.12 471.36,57.12 ' style='stroke-width: 0.56; stroke: #D9D9D6; stroke-linecap: butt;' />
+<polygon points='46.86,120.24 63.47,240.16 80.64,212.59 97.26,188.32 114.43,205.58 131.59,230.48 148.21,228.83 165.38,207.91 181.99,182.65 199.16,180.31 216.33,166.10 231.84,164.24 249.00,146.86 265.62,141.58 282.79,128.70 299.40,168.53 316.57,156.75 333.74,195.60 350.35,208.39 367.52,190.02 384.14,161.28 401.31,155.76 418.47,166.73 433.98,130.99 451.15,125.55 451.15,57.12 433.98,57.12 418.47,57.12 401.31,57.12 384.14,57.12 367.52,57.12 350.35,57.12 333.74,57.12 316.57,57.12 299.40,57.12 282.79,57.12 265.62,57.12 249.00,57.12 231.84,57.12 216.33,57.12 199.16,57.12 181.99,57.12 165.38,57.12 148.21,57.12 131.59,57.12 114.43,57.12 97.26,57.12 80.64,57.12 63.47,57.12 46.86,57.12 ' style='stroke-width: 0.00; stroke: none; fill: #2A6FA2;' />
+<polyline points='46.86,120.24 63.47,240.16 80.64,212.59 97.26,188.32 114.43,205.58 131.59,230.48 148.21,228.83 165.38,207.91 181.99,182.65 199.16,180.31 216.33,166.10 231.84,164.24 249.00,146.86 265.62,141.58 282.79,128.70 299.40,168.53 316.57,156.75 333.74,195.60 350.35,208.39 367.52,190.02 384.14,161.28 401.31,155.76 418.47,166.73 433.98,130.99 451.15,125.55 ' style='stroke-width: 1.07; stroke: #2A6FA2;' />
+</g>
+<g clip-path='url(#cpMC4wMHw0ODAuMDB8MC4wMHwyNzAuMDA=)'>
+<text x='20.37' y='229.38' text-anchor='end' style='font-size: 14.00px; font-family: "Arial";' textLength='20.22px' lengthAdjust='spacingAndGlyphs'>-60</text>
+<text x='20.37' y='173.63' text-anchor='end' style='font-size: 14.00px; font-family: "Arial";' textLength='20.22px' lengthAdjust='spacingAndGlyphs'>-40</text>
+<text x='20.37' y='117.88' text-anchor='end' style='font-size: 14.00px; font-family: "Arial";' textLength='20.22px' lengthAdjust='spacingAndGlyphs'>-20</text>
+<text x='20.37' y='62.13' text-anchor='end' style='font-size: 14.00px; font-family: "Arial";' textLength='7.78px' lengthAdjust='spacingAndGlyphs'>0</text>
+<polyline points='26.65,249.32 471.36,249.32 ' style='stroke-width: 0.75; stroke-linecap: butt;' />
+<polyline points='97.26,252.80 97.26,249.32 ' style='stroke-width: 0.56; stroke-linecap: butt;' />
+<polyline points='199.16,252.80 199.16,249.32 ' style='stroke-width: 0.56; stroke-linecap: butt;' />
+<polyline points='299.40,252.80 299.40,249.32 ' style='stroke-width: 0.56; stroke-linecap: butt;' />
+<polyline points='401.31,252.80 401.31,249.32 ' style='stroke-width: 0.56; stroke-linecap: butt;' />
+<text x='97.26' y='265.62' text-anchor='middle' style='font-size: 14.00px; font-family: "Arial";' textLength='51.36px' lengthAdjust='spacingAndGlyphs'>2020-07</text>
+<text x='199.16' y='265.62' text-anchor='middle' style='font-size: 14.00px; font-family: "Arial";' textLength='51.36px' lengthAdjust='spacingAndGlyphs'>2021-01</text>
+<text x='299.40' y='265.62' text-anchor='middle' style='font-size: 14.00px; font-family: "Arial";' textLength='51.36px' lengthAdjust='spacingAndGlyphs'>2021-07</text>
+<text x='401.31' y='265.62' text-anchor='middle' style='font-size: 14.00px; font-family: "Arial";' textLength='51.36px' lengthAdjust='spacingAndGlyphs'>2022-01</text>
+<text x='0.14' y='35.15' style='font-size: 11.20px;fill: #53565A; font-family: "Arial";' textLength='173.91px' lengthAdjust='spacingAndGlyphs'>% differnce in visits since pre-covid</text>
+<text x='0.14' y='17.22' style='font-size: 14.00px; font-weight: bold;fill: #004676; font-family: "Arial";' textLength='182.76px' lengthAdjust='spacingAndGlyphs'>Melbourne workplace visits</text>
+</g>
+</svg>
