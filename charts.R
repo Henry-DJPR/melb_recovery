@@ -1,7 +1,7 @@
 
 # Packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, svglite, rvest, lubridate, ggrepel)
+pacman::p_load(tidyverse, svglite, rvest, lubridate, ggrepel, readabs)
 pacman::p_load_gh("djpr-data/djprtheme")
 
 
@@ -33,10 +33,28 @@ pca_page <- read_html(pca_url)
 
 
 
+# Download industry employment (not in ts directory for read_abs for some reason)
+abs_ind_url <- "https://www.abs.gov.au/statistics/labour/employment-and-unemployment/labour-force-australia-detailed/mar-2022/6291004.xlsx"
+abs_ind_dest <- tempfile(fileext = ".xlsx")
+
+if(!file.exists(abs_ind_dest)){
+  download.file(abs_ind_url, abs_ind_dest, mode = "wb")
+}
+
+
+
 
 # Parse all data
 google_mobility <- map_df(google_paths, read_csv)
 pca_occupancy <- html_table(pca_page)[[2]]
+abs_industry_vac <- read_abs("6354.0", 4)
+clue_melb_ind <- read_csv(
+  "https://data.melbourne.vic.gov.au/resource/nw38-8y7g.csv"
+  )
+abs_industry_n <- read_abs_local(
+  path = dirname(abs_ind_dest), 
+  filenames = basename(abs_ind_dest)
+  )
 
 
 
@@ -81,6 +99,121 @@ pca_occupancy <- pca_occupancy %>%
 
 
 
+# Clean CLUE data
+industry_recode <-c(
+  "accommodation_and_food" = "Accommodation and Food Services",
+  "administrative_and_support" = "Administrative and Support Services",
+  "agriculture_forestry_and" = "Agriculture, Forestry and Fishing",
+  "arts_and_recreation_services" = "Arts and Recreation Services",
+  "construction" = "Construction",
+  "education_and_training" = "Education and Training",
+  "electricity_gas_water_and" = "Electricity, Gas, Water and Waste Services",
+  "financial_and_insurance" = "Financial and Insurance Services",
+  "health_care_and_social" = "Health Care and Social Assistance",
+  "information_media_and" = "Information Media and Telecommunications",
+  "manufacturing" = "Manufacturing",
+  "mining" = "Mining",
+  "other_services" = "Other Services",
+  "professional_scientific_and" = "Professional, Scientific and Technical Services",
+  "public_administration_and" = "Public Administration and Safety",
+  "rental_hiring_and_real_estate" = "Rental, Hiring and Real Estate Services",
+  "retail_trade" = "Retail Trade",
+  "transport_postal_and" = "Transport, Postal and Warehousing",
+  "wholesale_trade" = "Wholesale Trade"
+)
+
+clue_melb_ind <- clue_melb_ind %>% 
+  filter(clue_small_area == "Melbourne (CBD)") %>% 
+  select(
+    -census_year, 
+    -block_id, 
+    -clue_small_area, 
+    -total_employment_in_block
+    ) %>% 
+  summarise(across(everything(), sum, na.rm = TRUE)) %>% 
+  pivot_longer(everything(), names_to = "industry", values_to = "melb_emp") %>% 
+  mutate(industry = recode(industry, !!!industry_recode))
+
+
+
+
+# Clean ABS job vacancy data
+abs_industry_vac <- abs_industry_vac %>% 
+  filter(str_detect(series, "^Job Vacancies")) %>% 
+  filter(date == max(date)) %>% 
+  mutate(
+    vacancies = value * 1000,
+    industry = series %>% 
+      str_remove_all("Job Vacancies|;") %>% 
+      str_squish()
+  ) %>% 
+  select(industry, vacancies) %>% 
+  filter(!str_detect(industry, "Total"))
+
+
+
+
+# Clean ABS industry employment
+composition_ref_date <- as.Date("2020-12-01")
+closest_date <- abs_industry_vac$date[
+  which.min(abs(abs_industry_vac$date - composition_ref_date))
+]
+
+closest_date <- abs_industry_n$date[
+  which.min(abs(abs_industry_n$date - composition_ref_date))
+]
+abs_industry_n <- abs_industry_n %>% 
+  filter(series_type == "Original", date == closest_date) %>% 
+  select(industry = series, tot_emp = value) %>% 
+  mutate(
+    tot_emp = tot_emp * 1000,
+    industry = industry %>% 
+      str_remove_all("Employed total|;") %>% 
+      str_squish()
+  ) %>% 
+  filter(industry != "")
+
+
+
+
+# Join MELB empty jobs data
+empty_jobs <- abs_industry_n %>% 
+  full_join(abs_industry_vac) %>% 
+  full_join(clue_melb_ind) %>% 
+  mutate(
+    empty_jobs = melb_emp / tot_emp * vacancies,
+    empty_jobs = ifelse(is.na(empty_jobs), 0, empty_jobs),
+    industry_label = recode(
+      industry,
+      "Agriculture, Forestry and Fishing" = "Agriculture",
+      "Mining" = "Mining",
+      "Manufacturing" = "Manufacturing",
+      "Electricity, Gas, Water and Waste Services" = "Utilities",
+      "Construction" = "Construction",
+      "Wholesale Trade" = "Wholesale",
+      "Retail Trade" = "Retail",
+      "Accommodation and Food Services" = "Food & accom.",
+      "Transport, Postal and Warehousing" = "Logistics",
+      "Information Media and Telecommunications" = "IT",
+      "Financial and Insurance Services" = "Finance",
+      "Rental, Hiring and Real Estate Services" = "Real estate",
+      "Professional, Scientific and Technical Services" = "Prof. services",
+      "Administrative and Support Services" = "Admin",
+      "Public Administration and Safety" = "Government",
+      "Education and Training" = "Education",
+      "Health Care and Social Assistance" = "Health",
+      "Arts and Recreation Services" = "Arts & rec.",
+      "Other Services" = "Other Services"
+    ) 
+    ) %>% 
+  arrange(empty_jobs) %>% 
+  mutate(industry_label = factor(industry_label, levels = industry_label))
+  
+
+
+
+
+
 # plot defaults
 ppt_width <- 33.867
 ppt_height <- 19.05
@@ -102,34 +235,6 @@ chart_mobility <- ggplot(google_mobility, aes(date, workplaces)) +
   ) +
   djprtheme::theme_djpr()
 
-# ggplot(pca_occupancy, aes(date, occupancy, colour = city)) +
-#   geom_line() +
-#   theme_djpr() +
-#   djpr_colour_manual(
-#     length(unique(pca_occupancy$city))
-#   ) +
-#   scale_y_continuous(labels = scales::label_percent()) +
-#   geom_label_repel(
-#     data = pca_occupancy %>% filter(date == max(date)),
-#     aes(label = city),
-#     hjust = 0,
-#     nudge_x = 13,
-#     label.padding = 0.01,
-#     label.size = NA,
-#     lineheight = 0.9,
-#     point.padding = unit(0, "lines"),
-#     direction = "y",
-#     seed = 123,
-#     show.legend = FALSE,
-#     min.segment.length = unit(5, "lines"),
-#     size = 14 / .pt
-#   ) +
-#   scale_x_date(
-#     expand = expansion(
-#       mult = 0.2
-#     ),
-#     date_labels = "%b\n%Y"
-#   )
 
 chart_occupancy <- pca_occupancy %>% 
   filter(city == "Melb") %>% 
@@ -144,6 +249,25 @@ chart_occupancy <- pca_occupancy %>%
     x = NULL
     )
 
+chart_empty_jobs <- empty_jobs %>% 
+  ggplot(aes(industry_label, empty_jobs, label = round(empty_jobs))) +
+  geom_col()+
+  geom_text(hjust = 0) +
+  scale_y_discrete(expand = c(0, 0, 0.5, 0))+
+  theme_djpr() +
+  theme(
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    axis.line.y = element_line(),
+    axis.line.x = element_blank()
+  )+
+  labs(
+    title = "Estimate unfilled positions in CBD",
+    subtitle = "Number of job vacancies by industry",
+    x = NULL,
+    y = NULL
+  )+
+  coord_flip()
 
 ggsave(
   filename = "output/workplace vists.svg", 
@@ -156,6 +280,14 @@ ggsave(
 ggsave(
   filename = "output/CBD occupancy.svg", 
   plot = chart_occupancy,
+  width = svg_width, 
+  height = svg_height, 
+  units = ppt_units
+)
+
+ggsave(
+  filename = "output/empty jobs.svg", 
+  plot = chart_empty_jobs,
   width = svg_width, 
   height = svg_height, 
   units = ppt_units
