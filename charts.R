@@ -1,7 +1,7 @@
 
 # Packages
 if(!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, svglite, rvest, lubridate, ggrepel, readabs)
+pacman::p_load(tidyverse, svglite, rvest, lubridate, ggrepel, readabs, zoo, ggseas)
 pacman::p_load_gh("djpr-data/djprtheme")
 
 
@@ -51,6 +51,7 @@ abs_industry_vac <- read_abs("6354.0", 4)
 clue_melb_ind <- read_csv(
   "https://data.melbourne.vic.gov.au/resource/nw38-8y7g.csv"
   )
+pedestrian <- read_csv("data-raw/Pedestrian_Counting_System_-_Monthly__counts_per_hour_.csv")
 abs_industry_n <- read_abs_local(
   path = dirname(abs_ind_dest), 
   filenames = basename(abs_ind_dest)
@@ -99,6 +100,24 @@ pca_occupancy <- pca_occupancy %>%
 
 
 
+# Clean pedestrian data
+pedestrian <- pedestrian %>% 
+  filter(Sensor_Name == "Bourke Street Mall (South)") %>% 
+  select(date = Date_Time, count = Hourly_Counts) %>% 
+  mutate(
+    date = parse_date_time(date, "B d, Y I:M:S p")
+  )
+# pedestrian_2019 <- pedestrian %>% 
+#   filter(year(date) == 2019) %>% 
+#   select(-date) %>% 
+#   rename(count_2019 = count)
+# 
+# pedestrian <- pedestrian %>% 
+#   full_join(pedestrian_2019) %>% 
+#   mutate(count_rel = count / count_2019)
+
+
+
 # Clean CLUE data
 industry_recode <-c(
   "accommodation_and_food" = "Accommodation and Food Services",
@@ -140,14 +159,13 @@ clue_melb_ind <- clue_melb_ind %>%
 # Clean ABS job vacancy data
 abs_industry_vac <- abs_industry_vac %>% 
   filter(str_detect(series, "^Job Vacancies")) %>% 
-  filter(date == max(date)) %>% 
   mutate(
     vacancies = value * 1000,
     industry = series %>% 
       str_remove_all("Job Vacancies|;") %>% 
       str_squish()
   ) %>% 
-  select(industry, vacancies) %>% 
+  select(date, industry, vacancies) %>% 
   filter(!str_detect(industry, "Total"))
 
 
@@ -192,7 +210,7 @@ empty_jobs <- abs_industry_n %>%
       "Construction" = "Construction",
       "Wholesale Trade" = "Wholesale",
       "Retail Trade" = "Retail",
-      "Accommodation and Food Services" = "Food & accom.",
+      "Accommodation and Food Services" = "Hospitality",
       "Transport, Postal and Warehousing" = "Logistics",
       "Information Media and Telecommunications" = "IT",
       "Financial and Insurance Services" = "Finance",
@@ -205,9 +223,7 @@ empty_jobs <- abs_industry_n %>%
       "Arts and Recreation Services" = "Arts & rec.",
       "Other Services" = "Other Services"
     ) 
-    ) %>% 
-  arrange(empty_jobs) %>% 
-  mutate(industry_label = factor(industry_label, levels = industry_label))
+    ) 
   
 
 
@@ -249,25 +265,87 @@ chart_occupancy <- pca_occupancy %>%
     x = NULL
     )
 
+# chart_empty_jobs <- empty_jobs %>% 
+#   ggplot(aes(industry_label, empty_jobs, label = round(empty_jobs))) +
+#   geom_col()+
+#   geom_text(hjust = 0) +
+#   scale_y_discrete(expand = c(0, 0, 0.5, 0))+
+#   theme_djpr() +
+#   theme(
+#     panel.grid.major = element_blank(), 
+#     panel.grid.minor = element_blank(),
+#     axis.line.y = element_line(),
+#     axis.line.x = element_blank()
+#   )+
+#   labs(
+#     title = "Estimate unfilled positions in CBD",
+#     subtitle = "Number of job vacancies by industry",
+#     x = NULL,
+#     y = NULL
+#   )+
+#   coord_flip()
+
+top_ind <- empty_jobs %>% 
+  filter(date == max(date, na.rm = T)) %>% 
+  slice_max(empty_jobs, n = 4) %>% 
+  pull(industry_label)
+
+labels <- empty_jobs %>% 
+  filter(date == max(date, na.rm = T)) %>% 
+  mutate(industry_label = ifelse(industry_label %in% top_ind, industry_label, "Other")) %>% 
+  group_by(date, industry_label) %>% 
+  summarise(empty_jobs = sum(empty_jobs, na.rm = T))
+
 chart_empty_jobs <- empty_jobs %>% 
-  ggplot(aes(industry_label, empty_jobs, label = round(empty_jobs))) +
-  geom_col()+
-  geom_text(hjust = 0) +
-  scale_y_discrete(expand = c(0, 0, 0.5, 0))+
+  filter(date >= "2020-01-01") %>% 
+  mutate(industry_label = ifelse(industry_label %in% top_ind, industry_label, "Other")) %>% 
+  group_by(date, industry_label) %>% 
+  summarise(empty_jobs = sum(empty_jobs, na.rm = T)) %>% 
+  ggplot(aes(date, empty_jobs, fill = industry_label, label = industry_label,)) +
+  geom_area(colour = "transparent")+
+  geom_text(data = labels, aes(colour = industry_label), hjust = 0, position = position_stack(vjust = 0.5))+
+  # scale_y_discrete(expand = c(0, 0, 0.5, 0))+
   theme_djpr() +
-  theme(
-    panel.grid.major = element_blank(), 
-    panel.grid.minor = element_blank(),
-    axis.line.y = element_line(),
-    axis.line.x = element_blank()
-  )+
+  djprtheme::djpr_y_continuous()+
+  djprtheme::djpr_fill_manual(n = 5) +
+  djprtheme::djpr_colour_manual(n = 5) +
+  scale_x_date(expand = c(0, 0, 0.25, 0), labels = scales::label_date("%h %y")) +
   labs(
     title = "Estimate unfilled positions in CBD",
     subtitle = "Number of job vacancies by industry",
     x = NULL,
     y = NULL
-  )+
-  coord_flip()
+  )
+
+chart_pedestrian <- pedestrian %>% 
+  filter(date >= "2020-04-01") %>%
+  mutate(date = as.Date(floor_date(date, "month"))) %>% 
+  group_by(date) %>% 
+  summarise(count = sum(count)) %>% 
+  ggplot(aes(date, count)) +
+  geom_col() +
+  theme_djpr() +
+  djprtheme::djpr_y_continuous(label = scales::label_number(scale = 1/1000, suffix = "k", big.mark = ",")) +
+  scale_x_date(labels = scales::label_date("%h %y")) +
+  labs(
+    x = NULL,
+    title = "Monthy pedestrians at Bourke Street Mall",
+    subtitle = "Total pedestrians counted"
+  )
+
+# cbind(count = pedestrian$count, covid = pedestrian$date > "2020-04-01") %>% 
+#   ts(start = c(2009, 5), frequency = 12, end = c(2022, 03)) %>% 
+#   tsdf() %>% 
+#   ggplot(aes(x, count)) + 
+#   stat_seas()
+# 
+# covid_dummy <- 
+#   as.integer(pedestrian$date > "2020-04-01") %>% 
+#   ts(start = c(2009, 5), frequency = 12, end = c(2022, 03))
+# 
+# ts(pedestrian$count, start = c(2009, 5), frequency = 12, end = c(2022, 03)) %>% 
+#   seasonal::seas(xreg = covid_dummy, x11 = "")
+
 
 ggsave(
   filename = "output/workplace vists.svg", 
@@ -288,6 +366,14 @@ ggsave(
 ggsave(
   filename = "output/empty jobs.svg", 
   plot = chart_empty_jobs,
+  width = svg_width, 
+  height = svg_height, 
+  units = ppt_units
+)
+
+ggsave(
+  filename = "output/pedestrians.svg", 
+  plot = chart_pedestrian,
   width = svg_width, 
   height = svg_height, 
   units = ppt_units
